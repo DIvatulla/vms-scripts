@@ -30,9 +30,6 @@ class zbx_http(http_adapter):
 		self._response = http_response(http_conn.getresponse())
 		http_conn.close()	
 
-		self._request.headers = {"Content-Type": "application/json-rpc"}
-		self._request.body = {}
-
 	@property
 	def connection(self):
 		return self._connection
@@ -111,9 +108,12 @@ class zabbix(api_wrapper):
 
 		self._http.send("POST")
 		
-		if self._http._response.status != 200:
+		if self._http._response.status != 200:# if nginx is gonna act strange
 			raise Exception({"status": self._http._response.status, \
 							"response": self._http._response.body})
+		if (self._http._response.body.get("error") != None) and \
+			(self._http._response.body["error"]["code"] == -32602):
+			self.login()
 
 		return self._http._response.body
 
