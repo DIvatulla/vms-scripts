@@ -92,9 +92,8 @@ class egsv(api_wrapper):
 		self._http._request.headers["Authorization"] = \
 			"Bearer {}".format(self._http._credentials.token)
 		self._http._request.body = data			
-
 		self._http.send("POST")
-		
+
 		if self._http._response.status != 200:
 			raise Exception({"status": self._http._response.status, \
 							"response": self._http._response.body})
