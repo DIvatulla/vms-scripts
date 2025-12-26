@@ -132,4 +132,4 @@ class api_wrapper(ABC):
 		if self.http.credentials.token == None:
 			self.login()
 		elif not(self.auth()):
-			raise Exception("{} invalid token".format(self._http.token))
+			raise Exception("{} invalid token".format(self.http.credentials.token))

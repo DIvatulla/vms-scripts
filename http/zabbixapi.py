@@ -113,14 +113,15 @@ class zabbix(api_wrapper):
 			"id": self._http.uniqid()
 		}
 		
+		self._http.send("POST")	
 		try:	
 			self.__error_check()
 		except:
-			return false
+			return False
 		finally:
 			self._http.clear()
 
-		return true
+		return True
 
 	def method(self, name: str, data = {}):
 		result = {}
@@ -137,6 +138,7 @@ class zabbix(api_wrapper):
 			raise Exception({"status": self._http._response.status, \
 							"response": self._http._response.body})
 		if self._http._response.body.get("error") != None:
+			print(self._http._response.body["error"])
 			raise Exception(self._http._response.body["error"])
 	
 	@property
