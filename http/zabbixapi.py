@@ -112,8 +112,9 @@ class zabbix(api_wrapper):
 			raise Exception({"status": self._http._response.status, \
 							"response": self._http._response.body})
 		if (self._http._response.body.get("error") != None) and \
-			(self._http._response.body["error"]["code"] == -32602):
+			(self._http._response.body["error"]["code"] == -32602):# if token expired
 			self.login()
+			self._http.send("POST")
 
 		return self._http._response.body
 
