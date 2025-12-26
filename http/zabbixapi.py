@@ -104,7 +104,7 @@ class zabbix(api_wrapper):
 	def auth(self) -> bool:
 		status = bool
 
-		self._request.body = {
+		self._http._request.body = {
 			"jsonrpc": "2.0",
 			"method": "user.checkAuthentication",
 			"params": {
