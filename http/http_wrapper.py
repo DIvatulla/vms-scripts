@@ -17,21 +17,27 @@ class http_request:
 		self.headers = headers
 		self.body = body
 
-class http_response:
-	def __init__(self, response: http.client.HTTPResponse):
-		self.headers = {}
-		self.status = response.status
-		self.body = json.loads(response.read().decode())
-		self.__parse_headers(response.headers)
+class http_response(http_request):
+	def __init__(self, response: http.client.HTTPResponse | None = None):
+		if response == None:
+			super().__init__({}, {})	
+		else:
+			super().__init__(self.__parse_headers(response.headers), \
+						 json.loads(response.read().decode()))	
+			self.status = response.status
 
-	def __parse_headers(self, message: http.client.HTTPMessage):
+	def __parse_headers(self, headers):
 		buf = []
+		headers_dict = {}
 
-		for line in re.split(r"\n", message.as_string()):
+		for line in re.split(r"\n", headers.as_string()):
 			if len(line) < 1:
 				continue
+
 			buf = re.split(r": ", line, 1)
-			self.headers[buf[0]] = buf[1]
+			headers_dict[buf[0]] = buf[1]
+
+		return headers_dict
 
 class conn:
 	def __init__(self, host, port: str):
@@ -56,7 +62,15 @@ class http_adapter(ABC):
 		pass
 
 	@abstractmethod
+	def set(self):
+		pass
+
+	@abstractmethod
 	def send(self):
+		pass
+
+	@abstractmethod
+	def clear(self):
 		pass
 
 	@property
