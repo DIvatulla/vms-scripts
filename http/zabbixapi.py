@@ -5,6 +5,24 @@ from http_wrapper import http_adapter, http_request, http_response, api_wrapper,
 import http
 import sys
 
+class WebServerErr(Exception):
+	def __init__(self, code, body):
+		self.err = {"status": code, "response": body}
+			
+	def __str__(self):
+		return json.dumps(self.err)
+
+class ZabbixErr(WebServerErr):
+	def __init__(self, body):
+		self.err = body
+
+class InvalidRequestErr(ZabbixErr):
+	pass	
+class LoginErr(ZabbixErr):
+	pass
+class TokenExpirationErr(ZabbixErr):
+	pass	
+
 class zbx_http(http_adapter):
 	def __init__(self, host, port, user, password, token: str):
 		self._connection = conn(host, port)
@@ -38,6 +56,7 @@ class zbx_http(http_adapter):
 						json.dumps(self._request.body), self._request.headers)
 		self._response = http_response(http_conn.getresponse())
 		http_conn.close()	
+		self.__error_check()
 
 	def clear(self):
 		self._request = http_request()
@@ -46,6 +65,21 @@ class zbx_http(http_adapter):
 		self._request.path = "/api_jsonrpc.php"
 
 		self._response = http_response()			
+
+	def __error_check(self):
+		err = {}
+
+		if self._response.status != 200:
+			raise WebServerErr(self._response.status, self._response.body)
+		else:
+			err = self._response.body.get("error")  
+			if err != None:
+				if err["code"] == -32500:
+					raise LoginErr(err)
+				elif err["code"] == -32602:
+					raise TokenExpirationErr(err)
+				else:
+					raise InvalidRequestErr(err)
 	
 	@property
 	def connection(self):
@@ -75,7 +109,9 @@ class zabbix(api_wrapper):
 			input_data = env_file.content
 
 		self.input_validate(input_data)
-		self._http = zbx_http(input_data["zbx_host"], input_data["zbx_port"], input_data["zbx_user"], input_data["zbx_password"], input_data.get("zbx_token"))
+		self._http = zbx_http(input_data["zbx_host"], input_data["zbx_port"], \
+		input_data["zbx_user"], input_data["zbx_password"],\
+		input_data.get("zbx_token"))
 
 		self.server_validate()
 		self.user_validate()
@@ -94,15 +130,15 @@ class zabbix(api_wrapper):
 			},
 			"id": self._http.uniqid()
 		}
-
+		
 		self._http.send("POST")
-		self.__error_check()
 
 		self._http.credentials.token = self._http._response.body["result"]
 		self._http.clear()
 	
 	def auth(self) -> bool:
 		status = bool
+		buf = {}
 
 		self._http._request.body = {
 			"jsonrpc": "2.0",
@@ -114,32 +150,25 @@ class zabbix(api_wrapper):
 		}
 		
 		self._http.send("POST")	
-		try:	
-			self.__error_check()
-		except:
-			return False
-		finally:
-			self._http.clear()
+		self._http.clear()
 
 		return True
 
 	def method(self, name: str, data = {}):
 		result = {}
 		self._http.set(name, data);
-		self._http.send("POST")
+		
+		try:
+			self._http.send("POST")
+		except TokenExpirationErr as ztee:
+			self.auth()
+			self._http.set(name, data);
+			self._http.send("POST")
 		
 		result = self._http._response.body["result"].copy()
 		self._http.clear()
 
 		return result
-	
-	def __error_check(self):
-		if self._http._response.status != 200:# if nginx is gonna act strange
-			raise Exception({"status": self._http._response.status, \
-							"response": self._http._response.body})
-		if self._http._response.body.get("error") != None:
-			print(self._http._response.body["error"])
-			raise Exception(self._http._response.body["error"])
 	
 	@property
 	def http(self):
