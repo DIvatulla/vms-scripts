@@ -28,7 +28,7 @@ class tg_http():
 
 class bot():
 	def __init__(self):
-		self.https = tg_http(env().content["bot_id"])
+		self.https = tg_http(env().content["bot_token"])
 		self.chat_id = env().content["chat_id"]
 
 	def send_msg(self, text: str) -> http_response:
