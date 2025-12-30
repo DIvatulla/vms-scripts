@@ -37,7 +37,7 @@ class bot():
 		self.https.request.path += "sendMessage"
 		self.https.request.body = {
 			"chat_id": self.chat_id,
-			"text": text
+			"text": text,
 			"parse_mode": "MarkdownV2"
 		}
 		self.https.send("POST")
