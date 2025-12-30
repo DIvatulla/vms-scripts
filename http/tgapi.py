@@ -38,6 +38,7 @@ class bot():
 		self.https.request.body = {
 			"chat_id": self.chat_id,
 			"text": text
+			"parse_mode": "MarkdownV2"
 		}
 		self.https.send("POST")
 		self.https.request.path = tmp
