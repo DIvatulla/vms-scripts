@@ -45,7 +45,7 @@ class zbx_http(http_adapter):
 		self._request.body = {
 			"jsonrpc": "2.0",
 			"method": method,
-			"params": [data],
+			"params": data,
 			"id": self.uniqid()
 		}
 
