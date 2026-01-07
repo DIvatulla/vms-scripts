@@ -15,7 +15,6 @@ class WebServerErr(Exception):
 class ZabbixErr(WebServerErr):
 	def __init__(self, body):
 		self.err = body
-
 class InvalidRequestErr(ZabbixErr):
 	pass	
 class LoginErr(ZabbixErr):
@@ -49,7 +48,7 @@ class zbx_http(http_adapter):
 			"id": self.uniqid()
 		}
 
-	def send(self, method: str) -> http_response:
+	def send(self, method: str):
 		http_conn = http.client.HTTPConnection(self._connection.host, \
 							int(self._connection.port), timeout=30)
 		http_conn.request(method, self._request.path, \
@@ -63,7 +62,6 @@ class zbx_http(http_adapter):
 		self._request.headers = {"Content-Type": "application/json-rpc"}
 		self._request.body = {}
 		self._request.path = "/api_jsonrpc.php"
-
 		self._response = http_response()			
 
 	def __error_check(self):
@@ -130,14 +128,11 @@ class zabbix(api_wrapper):
 			},
 			"id": self._http.uniqid()
 		}
-		
 		self._http.send("POST")
-
 		self._http.credentials.token = self._http._response.body["result"]
 		self._http.clear()
 	
 	def auth(self) -> bool:
-		status = bool
 		buf = {}
 
 		self._http._request.body = {
@@ -148,13 +143,16 @@ class zabbix(api_wrapper):
 			},
 			"id": self._http.uniqid()
 		}
-		
-		self._http.send("POST")	
-		self._http.clear()
+
+		try:
+			self._http.send("POST")	
+		except TokenExpirationErr as ztee:
+			self._http.clear()
+			return False
 
 		return True
 
-	def method(self, name: str, data = {}):
+	def method(self, name: str, data: dict = {}):
 		result = {}
 		self._http.set(name, data);
 		
