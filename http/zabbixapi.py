@@ -150,6 +150,7 @@ class zabbix(api_wrapper):
 			self._http.clear()
 			return False
 
+		self._http.clear()
 		return True
 
 	def method(self, name: str, data: dict = {}):

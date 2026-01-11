@@ -19,6 +19,8 @@ class InvalidRequestErr(WebServerErr):
 	pass
 class LoginErr(WebServerErr):
 	pass
+class TokenExpirationErr(WebServerErr):
+	pass
 
 class egsv_http(http_adapter):
 	def __init__(self, host, port, user, password, token: str):
@@ -48,17 +50,18 @@ class egsv_http(http_adapter):
 	def clear(self):
 		self._request = http_request()
 		self._request.headers = {"Content-Type": "application/json"}
-		self._request.body = {}
 		self._request.path = "/v2/"
 		self._response = http_response()
 
 	def __error_check(self):
 		if self._response.status != 200:
-			if (self._response.body.get("auth_error") != None):
-				raise LoginErr(self._response)	
-			else:
-				raise InvalidRequestErr(self._response)
-				
+			match (self._response.body.get("auth_error")):
+				case "invalid signature":
+					raise TokenExpirationErr(self._response)	
+				case "wrong credetenials":
+					raise LoginErr(self._response)	
+				case _:
+					raise InvalidRequestErr(self._response)
 
 	@property
 	def connection(self):
@@ -105,7 +108,7 @@ class egsv(api_wrapper):
 			"auth": {
 				"username": self._http.credentials.user,
 				"password": self._http.credentials.password
-			},
+			}
 		}
 		self._http.send("POST")
 		self._http.credentials.token = self._http._response.body["token"]
@@ -118,18 +121,31 @@ class egsv(api_wrapper):
 				"token": self._http._credentials.token
 			}
 		}
-		self._http.send("POST")
 
-		return self._http._response.status == 200 	
-	
+		try:
+			self._http.send("POST")
+		except LoginErr:
+			self._http.clear()
+			return False
+			
+		self._http.clear()
+		return True	
+
 	def method(self, name: str, data: dict = {}):
 		result = {}
 		self._http.set(name, data)
-		
-		self._http.send("POST")
+
+		try:
+			self._http.send("POST")
+		except TokenExpirationErr:
+			self.auth()
+			self._http.set(name, data)
+			self._http.send("POST")
 
 		result = self._http._response.body.copy()
-		return result;		
+		self._http.clear()
+
+		return result		
 
 	@property
 	def http(self):
