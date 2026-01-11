@@ -51,4 +51,4 @@ class bot():
 
 	@staticmethod
 	def mdformat(self, s: str) -> str:
-    	return re.sub(r'(\W)', r'\\\1', s)	
+		return re.sub(r'(\W)', r'\\\1', s)	
