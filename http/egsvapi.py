@@ -61,6 +61,7 @@ class egsv_http(http_adapter):
 				case "wrong credetenials":
 					raise LoginErr(self._response)	
 				case _:
+					print(self._response.body)
 					raise InvalidRequestErr(self._response)
 
 	@property

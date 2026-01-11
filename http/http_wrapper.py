@@ -126,7 +126,7 @@ class api_wrapper(ABC):
 
 	def server_validate(self):
 		if not ping(self.http.connection.host):
-			raise Exception("{} is unreacheable".format(self.http.credentials.host))
+			raise Exception("{} is unreacheable".format(self.http.connection.host))
 
 	def user_validate(self):
 		if self.http.credentials.token == None:
