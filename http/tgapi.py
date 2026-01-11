@@ -4,6 +4,7 @@ import random
 from http_wrapper import http_request, http_response, api_wrapper, conn, cred
 import http
 import sys
+import re
 
 class tg_http():
 	def __init__(self, token: str):
@@ -40,6 +41,7 @@ class bot():
 			"text": self.mdformat(text),
 			"parse_mode": "MarkdownV2"
 		}
+		print(self.https.request.body)
 		self.https.send("POST")
 		self.https.request.path = tmp
 		
@@ -50,5 +52,6 @@ class bot():
 		return self.https.response
 
 	@staticmethod
-	def mdformat(self, s: str) -> str:
-		return re.sub(r'(\W)', r'\\\1', s)	
+	def mdformat(s: str) -> str:
+		escape_chars = r"\[]()~>+-=|{}.!"
+		return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", s)
