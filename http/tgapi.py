@@ -37,7 +37,7 @@ class bot():
 		self.https.request.path += "sendMessage"
 		self.https.request.body = {
 			"chat_id": self.chat_id,
-			"text": text,
+			"text": self.mdformat(text),
 			"parse_mode": "MarkdownV2"
 		}
 		self.https.send("POST")
@@ -48,3 +48,7 @@ class bot():
 							"response": self.https.response.body})
 
 		return self.https.response
+
+	@staticmethod
+	def mdformat(self, s: str) -> str:
+    	return re.sub(r'(\W)', r'\\\1', s)	
